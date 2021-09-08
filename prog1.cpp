@@ -1,37 +1,39 @@
-#include <unistd.h> // open() close()
-#include <fcntl.h> // O_* constants
-#include <sys/stat.h>  // mkfifo()
+#include <unistd.h>		 // open() close()
+#include <fcntl.h>		 // O_* constants
+#include <sys/stat.h>	 // mkfifo()
 #include <sys/types.h> // mkfifo()
-#include <string.h> // strlen() strcmp()
-#include <stdio.h> // printf() scanf()
-#include <stdlib.h> // exit()
+#include <string.h>		 // strlen() strcmp()
+#include <stdio.h>		 // printf() scanf()
+#include <stdlib.h>		 // exit()
 
 #include "my_const.h"
 
-int main() {
+int main()
+{
 
 	// create the named pipe (FIFO) if not exist
-	int f1 = mkfifo(myfifo_1to2, 0666);
-	int f2 = mkfifo(myfifo_2to1, 0666);
+	int f1 = mkfifo(player1to2, 0666);
+	int f2 = mkfifo(player2to1, 0666);
 	printf("@p1: f1 = %d  f2 = %d\n", f1, f2);
 
 	char rd_data[MAX], wr_data[MAX];
+	const char playTag = 'O';
+	int location = 0;
 
 	printf("waiting for named pipes open ... \n");
 
 	// P1&P2: order of open() is important to unblock processes
 	// open() for WR will be blocked until the other side is open for RD
-	int fd_wr = open(myfifo_1to2, O_WRONLY);
+	int fd_wr = open(player1to2, O_WRONLY);
 	// open() for RD will be blocked until the other side is open for WR
-	int	fd_rd = open(myfifo_2to1, O_RDONLY);
+	int fd_rd = open(player2to1, O_RDONLY);
 
 	printf("named pipes opened and ready\n");
-	printf("This is an update");
 
-
-	// prog1: write first
-	while (true) {
-		printf("Enter a message (Q to quit): ");
+	// player 1: engage first
+	while (true)
+	{
+		printf("where do you want to play? Select between cells 0 through 8 (Q to quit): ");
 		fgets(wr_data, MAX, stdin);
 		wr_data[strlen(wr_data) - 1] = '\0'; // '\n' is replaced by NULL ('\0')
 		write(fd_wr, wr_data, strlen(wr_data) + 1);
@@ -43,7 +45,7 @@ int main() {
 	}
 	close(fd_wr);
 	close(fd_rd);
-	unlink(myfifo_1to2);
-	unlink(myfifo_2to1);
+	unlink(player1to2);
+	unlink(player2to1);
 	printf("Prog1 exits\n");
 }
