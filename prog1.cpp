@@ -5,6 +5,9 @@
 #include <string.h>		 // strlen() strcmp()
 #include <stdio.h>		 // printf() scanf()
 #include <stdlib.h>		 // exit()
+#include <iostream>
+
+using namespace std;
 
 #include "my_const.h"
 
@@ -18,7 +21,7 @@ int main()
 
 	char rd_data[MAX], wr_data[MAX];
 	const char playTag = 'O';
-	int location = 0;
+	int location;
 
 	printf("waiting for named pipes open ... \n");
 
@@ -33,7 +36,11 @@ int main()
 	// player 1: engage first
 	while (true)
 	{
-		printf("where do you want to play? Select between cells 0 through 8 (Q to quit): ");
+		printf("Where do you want to play? Select between cells 0 through 8 (Q to quit): ");
+		cin >> location;
+
+		// validate user location
+		validatePlayLocation(location);
 		fgets(wr_data, MAX, stdin);
 		wr_data[strlen(wr_data) - 1] = '\0'; // '\n' is replaced by NULL ('\0')
 		write(fd_wr, wr_data, strlen(wr_data) + 1);
@@ -48,4 +55,9 @@ int main()
 	unlink(player1to2);
 	unlink(player2to1);
 	printf("Prog1 exits\n");
+}
+
+bool validatePlayLocation(int location)
+{
+	if (location < 0 || location > 8)
 }
