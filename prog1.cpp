@@ -20,7 +20,6 @@ bool isWinningMove(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 bool isBoardFull(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 void resetBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 void printStats(struct Points &);
-void getPauseFeedback(struct Data &);
 
 char winingTag = 'X';
 
@@ -53,7 +52,7 @@ int main()
 	char playTag = 'O';
 	int location;
 
-	printf("waiting for named pipes open ... \n");
+	printf("waiting for named pipes open... \n");
 
 	// P1&P2: order of open() is important to unblock processes
 	// open() for WR will be blocked until the other side is open for RD
@@ -65,9 +64,9 @@ int main()
 	printf("named pipes opened and ready\n");
 
 	// player 1: engage first
+	printBoard(data.board);
 	while (true)
 	{
-		printBoard(data.board);
 		printf("Where do you want to play? Select between cells 0 through 8 (Otherwise to quit): ");
 		cin >> location;
 
@@ -83,20 +82,24 @@ int main()
 			if (isValidPlayLocation(location))
 			{
 				playInLocation(location, data.board, playTag);
-				cout << "You have played in " << location << " cell" << endl;
 				if (isWinningMove(data.board))
 				{
-					data.points.p1++;	 // add the points of p1
-					data.pause = true; // set pause to true
+					data.points.p1++; // add the points of p1
+					data.quit = true; // set quit to true
 					printBoard(data.board);
+					cout << "Winner: Player 1" << endl;
+					printStats(data.points);
 					write(fd_wr, &data, sizeof(data));
+					break;
 				}
-				else
+
+				if (isBoardFull(data.board))
 				{
-					if (isBoardFull(data.board))
-					{
-						cout << "The game has ended in a tie." << endl;
-					}
+					cout << "The game has ended in a tie." << endl;
+					data.quit = true;
+					printStats(data.points);
+					write(fd_wr, &data, sizeof(data));
+					break;
 				}
 			}
 			else
@@ -107,6 +110,7 @@ int main()
 			}
 		}
 		// writing to player 2
+		printBoard(data.board);
 		write(fd_wr, &data, sizeof(data));
 
 		// reading from player 2
@@ -119,21 +123,20 @@ int main()
 			cout << "Winner: Player 2" << endl;
 		}
 
-		if (data.pause)
+		if (isBoardFull(data.board))
 		{
+			cout << "The game has ended in a tie." << endl;
+			data.quit = true;
 			printStats(data.points);
-			getPauseFeedback(data);
 			write(fd_wr, &data, sizeof(data));
-			continue;
+			break;
 		}
 
 		//check if it's time to quite the application
 		if (data.quit)
 		{
 			// show game stats
-			cout << "Quiting game." << endl;
-			cout << "Player one points: " << data.points.p1 << endl;
-			cout << "Player two points: " << data.points.p2 << endl;
+			printStats(data.points);
 			break;
 		}
 	}
@@ -162,12 +165,6 @@ void printBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 	}
 }
 
-/** 
- * Play user action on the board
- * @param loc position or location the user desires to play
- * @param board reference to the active board.
- * */
-
 void playInLocation(int loc, array<array<char, BOARD_SIZE>, BOARD_SIZE> &board, char tag)
 {
 	int row = (int)loc / BOARD_SIZE;
@@ -179,6 +176,7 @@ void playInLocation(int loc, array<array<char, BOARD_SIZE>, BOARD_SIZE> &board, 
 		return;
 	}
 	board[row][col] = tag;
+	cout << "You have played in cell " << loc << endl;
 }
 
 // check validation criteria
@@ -226,7 +224,7 @@ bool isBoardFull(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 	{
 		for (auto const &entry : row)
 		{
-			if (entry != 'O' || entry != 'X')
+			if (entry != 'O' && entry != 'X')
 				return false;
 		}
 	}
@@ -240,27 +238,8 @@ void resetBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 
 void printStats(Points &points)
 {
-	cout << "======= Game Stats =========" << endl;
+	cout << "================= Game Stats ================" << endl;
 	cout << "Player one points: " << points.p1 << endl;
 	cout << "Player two points: " << points.p2 << endl;
 	printf("==============================================\n\n");
-}
-
-void getPauseFeedback(Data &data)
-{
-
-	cout << "[0]: Quit game" << endl;
-	cout << "[1]: Continue playing" << endl;
-	int option;
-	cin >> option;
-	if (option == 0)
-	{
-		data.pause = false;
-		data.quit = true;
-	}
-	if (option == 1)
-	{
-		data.pause = false;
-		resetBoard(data.board);
-	}
 }
