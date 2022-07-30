@@ -1,0 +1,5 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory `/Users/user/Coding/cpp/OperatingSystemsProj1'
+clang++ -g prog1.cpp -o p1
+make: Leaving directory `/Users/user/Coding/cpp/OperatingSystemsProj1'
+ 
