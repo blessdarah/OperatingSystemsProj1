@@ -14,27 +14,23 @@ using namespace std;
 
 void showBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 void playInLocation(int, array<array<char, BOARD_SIZE>, BOARD_SIZE> &, char);
-bool isWinningMove(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
+bool game_has_winner(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 bool noPlaySpaceInBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 bool isValidPlayLocation(int);
-void resetBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
-void printStats(struct Points &);
+void resetGameBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
+bool has_same_values(array<char, BOARD_SIZE> &arr);
+void show_game_stats(struct Payload &);
 
-char winingTag = 'O';
-struct Points
-{
-	int p1 = 0;
-	int p2 = 0;
-};
+char playerTag = 'O';
 
-struct Data
+struct Payload
 {
-	struct Points points;
-	array<array<char, BOARD_SIZE>, BOARD_SIZE> board;
+	// struct Points points;
+	int p1_score;
+	int p2_score;
+	array<array<char, BOARD_SIZE>, BOARD_SIZE> game_board;
 	bool quit;
-	bool pause;
 };
-
 int main()
 {
 	// create the named pipe (FIFO) if not created yet
@@ -42,13 +38,12 @@ int main()
 	int f2 = mkfifo(player2to1, 0666);
 	printf("@p2: f1 = %d  f2 = %d\n", f1, f2);
 
-	// main board data to be shared
-	array<array<char, BOARD_SIZE>, BOARD_SIZE> board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
-	struct Points points = {0, 0};
-	struct Data data = {points,board, false, false};
+	// main game_board payload to be shared
+	array<array<char, BOARD_SIZE>, BOARD_SIZE> game_board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
+	struct Payload payload = {0, 0 ,game_board, false};
 
-	char playTag = 'X';
-	int location;
+	char playerTag = 'X';
+	int cell_location;
 
 	printf("waiting for named pipes open ... \n");
 
@@ -64,34 +59,34 @@ int main()
 	// prog2: read first
 	while (true)
 	{
-		read(fd_rd, &data, sizeof(data));
-		cout << "received board data from player 1: " << endl;
-		showBoard(data.board);
+		read(fd_rd, &payload, sizeof(payload));
+		cout << "received game_board payload from player 1: " << endl;
+		showBoard(payload.game_board);
 
 		// check if there is a winning move from previous play
-		if (isWinningMove(data.board))
+		if (game_has_winner(payload.game_board))
 		{
 			cout << "Winner: Player 1" << endl;
 		}
 
-		if (noPlaySpaceInBoard(data.board))
+		if (noPlaySpaceInBoard(payload.game_board))
 		{
 			cout << "The game has ended in a tie." << endl;
-			data.quit = true;
-			printStats(data.points);
-			write(fd_wr, &data, sizeof(data));
+			payload.quit = true;
+			show_game_stats(payload);
+			write(fd_wr, &payload, sizeof(payload));
 			break;
 		}
 
 		//check if it's time to quite the application
-		if (data.quit)
+		if (payload.quit)
 		{
-			printStats(data.points); // show game stats
+			show_game_stats(payload); // show game stats
 			break;
 		}
 
 		printf("Where do you want to play? Select between cells 0 through 8 (Otherwise to quit): ");
-		cin >> location;
+		cin >> cell_location;
 
 		if (!cin) // check if user input does not matche an integer value
 		{
@@ -102,38 +97,37 @@ int main()
 		}
 		else
 		{
-			if (isValidPlayLocation(location))
+			if (isValidPlayLocation(cell_location))
 			{
-				playInLocation(location, data.board, playTag);
+				playInLocation(cell_location, payload.game_board, playerTag);
 
-				if (isWinningMove(data.board))
+				if (game_has_winner(payload.game_board))
 				{
-					data.points.p2++; // if wining move, add points of player 2
-					data.quit = true; // change quit to true
-					showBoard(data.board);
+					payload.p2_score++; // if wining move, add points of player 2
+					payload.quit = true; // change quit to true
+					showBoard(payload.game_board);
 					cout << "Winner: Player 2" << endl;
-					printStats(data.points);
-					write(fd_wr, &data, sizeof(data));
+					show_game_stats(payload);
+					write(fd_wr, &payload, sizeof(payload));
 					break;
 				}
 
-				if (noPlaySpaceInBoard(data.board))
+				if (noPlaySpaceInBoard(payload.game_board))
 				{
-					cout << "The game has ended in a tie." << endl;
-					data.quit = true;
-					printStats(data.points);
-					write(fd_wr, &data, sizeof(data));
+					payload.quit = true;
+					show_game_stats(payload);
+					write(fd_wr, &payload, sizeof(payload));
 					break;
 				}
 
-				showBoard(data.board);
-				write(fd_wr, &data, sizeof(data));
+				showBoard(payload.game_board);
+				write(fd_wr, &payload, sizeof(payload));
 			}
 			else
 			{
-				cout << "Please select a valid location from 0 to 8" << endl;
+				cout << "Please select a valid cell_location from 0 to 8" << endl;
 				printf("Where do you want to play? Select between cells 0 through 8 (Otherwise to quit): ");
-				cin >> location;
+				cin >> cell_location;
 			}
 		}
 	}
@@ -141,15 +135,15 @@ int main()
 	close(fd_wr);
 }
 
-bool isValidPlayLocation(int location)
+bool isValidPlayLocation(int cell_location)
 {
-	return (location < 0 || location > 8) ? false : true;
+	return (cell_location < 0 || cell_location > 8) ? false : true;
 }
 
-void showBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
+void showBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &game_board)
 {
 	cout << "+-+-+-+" << endl;
-	for (auto const &row : board)
+	for (auto const &row : game_board)
 	{
 		for (auto const &entry : row)
 		{
@@ -160,61 +154,101 @@ void showBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 	}
 }
 
-void playInLocation(int loc, array<array<char, BOARD_SIZE>, BOARD_SIZE> &board, char tag)
+void playInLocation(int loc, array<array<char, BOARD_SIZE>, BOARD_SIZE> &game_board, char tag)
 {
 	int row = (int)loc / BOARD_SIZE;
 	int col = (int)loc % BOARD_SIZE;
 
-	if (board[row][col] == 'O' || board[row][col] == 'X')
+	if (game_board[row][col] == 'O' || game_board[row][col] == 'X')
 	{
-		cout << "That location is used already. Try something else" << endl;
+		cout << "That cell_location is used already. Try something else" << endl;
 		return;
 	}
-	board[row][col] = tag;
+	game_board[row][col] = tag;
 	cout << "You have played in cell " << loc << endl;
 }
 
-bool isWinningMove(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
+bool has_same_values(array<char, BOARD_SIZE> &arr)
+{
+	char value = arr[0];
+	for (int i = 0; i < arr.size(); i++)
+	{
+		if(arr[i] != value) return false;
+	}
+	return true;
+}
+
+// check validation criteria
+bool game_has_winner(array<array<char, BOARD_SIZE>, BOARD_SIZE> &game_board)
 {
 	// check for rows
 	for (int i = 0; i < BOARD_SIZE; i++)
 	{
-		if (board[i][0] == board[i][1] && board[i][1] == board[i][2])
+		array<char, BOARD_SIZE> row = game_board[i];
+		if(has_same_values(row))
 		{
-			winingTag = board[i][0];
+			cout << "rows match: " << true << endl;
+			playerTag = row[0];
 			return true;
 		}
+	}
+
+	// leding diagonals
+	array<char, BOARD_SIZE> left_leading_diagonal;
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j <= i; j++) {
+			if(i == j) left_leading_diagonal[i] = game_board[i][j];
+		}
+	}
+	if(has_same_values(left_leading_diagonal))
+	{
+		playerTag = left_leading_diagonal[0];
+		cout << "left diagonal match: " << true << endl;
+		return true;
+	}
+
+	array<char, BOARD_SIZE> right_leading_diagonal;
+	for (int i = BOARD_SIZE - 1; i >= 0; i--) {
+		for (int j = 0; j <= i; j++) {
+			if(i == j) right_leading_diagonal[i] = game_board[i][j];
+		}
+	}
+	if(has_same_values(right_leading_diagonal)) 
+	{
+		playerTag = right_leading_diagonal[0];
+		cout << "right diagonal match: " << true << endl;
+		return true;
 	}
 
 	// check for columns
 	for (int i = 0; i < BOARD_SIZE; i++)
 	{
-		if (board[0][i] == board[1][i] && board[1][i] == board[2][i])
+		array<char, BOARD_SIZE> column;
+		for(int j = 0; j < BOARD_SIZE; j++)
 		{
-			winingTag = board[0][i];
-			return true;
+			column[j] = game_board[j][i];
 		}
-	}
-
-	// check for diagonals
-	if (board[0][0] == board[1][1] && board[1][1] == board[2][2])
-	{
-		winingTag = board[0][0];
-		return true;
-	}
-
-	if (board[0][2] == board[1][1] && board[1][1] == board[2][0])
-	{
-		winingTag = board[0][2];
-		return true;
+		if(has_same_values(column))
+		{
+			playerTag = column[0];
+			return true;
+			cout << "columns match: " << true << endl;
+		}
 	}
 
 	return false;
 }
-
-bool noPlaySpaceInBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
+void show_game_stats(Payload &payload)
 {
-	for (auto const &row : board)
+	cout << "================= Game Stats ================" << endl;
+	cout << "Player one points: " << payload.p1_score << endl;
+	cout << "Player two points: " << payload.p2_score << endl;
+	printf("==============================================\n\n");
+}
+
+bool noPlaySpaceInBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &game_board)
+{
+	for (auto const &row : game_board)
 	{
 		for (auto const &entry : row)
 		{
@@ -225,15 +259,10 @@ bool noPlaySpaceInBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 	return true;
 }
 
-void resetBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
+void resetGameBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &game_board)
 {
-	board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
+	game_board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
 }
 
-void printStats(Points &points)
-{
-	cout << "================= Game Stats ================" << endl;
-	cout << "Player one points: " << points.p1 << endl;
-	cout << "Player two points: " << points.p2 << endl;
-	printf("==============================================\n\n");
-}
+
+
