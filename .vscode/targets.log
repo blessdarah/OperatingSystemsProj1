@@ -10,12 +10,12 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 make: *** No rule to make target `all'.  Stop.
 
 
-# Make data base, printed on Sat Jul 30 09:07:52 2022
+# Make data base, printed on Sat Jul 30 09:09:48 2022
 
 # Variables
 
-# automatic
  
+# automatic
 <D = $(patsubst %/,%,$(dir $<))
 # automatic
 ?F = $(notdir $?)
@@ -80,7 +80,6 @@ VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
 HOME = /Users/user
 # default
- 
 MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
 # environment
 VSCODE_CODE_CACHE_PATH = /Users/user/Library/Application Support/Code/CachedData/da15b6fd3ef856477bf6f4fb29ba1b7af717770d
@@ -161,7 +160,6 @@ SUFFIXES :=
 # environment
 MAKELEVEL := 0
 # environment
- 
 LANG = C
 # environment
 VSCODE_PID = 1083
@@ -174,9 +172,9 @@ VSCODE_PID = 1083
 
 # Directories
 
-# . (device 16777231, inode 75012776): 27 files, no impossibilities.
+# . (device 16777231, inode 75012776): 29 files, no impossibilities.
 
-# 27 files, no impossibilities in 1 directories.
+# 29 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -218,13 +216,13 @@ p1: prog1.cpp my_const.h
 #  Modification time never checked.
 #  File has not been updated.
 #  commands to execute (from `Makefile', line 2):
-	clang++ -g prog1.cpp -o p1
+	clang++ --std=gnu++17 -g prog1.cpp -o p1
 	
 
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-30 09:07:33
+#  Last modified 2022-07-30 09:09:40
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -241,7 +239,7 @@ p2: prog2.cpp my_const.h
 #  Modification time never checked.
 #  File has not been updated.
 #  commands to execute (from `Makefile', line 5):
-	clang++ -g prog2.cpp -o p2
+	clang++ --std=gnu++17 -g prog2.cpp -o p2
 	
 
 # Not a target:
@@ -265,6 +263,7 @@ clean:
 	
 
 # files hash-table stats:
+ 
 # Load=11/1024=1%, Rehash=0, Collisions=0/27=0%
 # VPATH Search Paths
 
@@ -277,6 +276,6 @@ clean:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Finished Make data base on Sat Jul 30 09:07:52 2022
+# Finished Make data base on Sat Jul 30 09:09:48 2022
 
  

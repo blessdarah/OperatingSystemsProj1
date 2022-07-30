@@ -12,11 +12,11 @@
 
 using namespace std;
 
-bool isValidPlayLocation(int);
-void printBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
+void showBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 void playInLocation(int, array<array<char, BOARD_SIZE>, BOARD_SIZE> &, char);
 bool isWinningMove(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
-bool isBoardFull(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
+bool noPlaySpaceInBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
+bool isValidPlayLocation(int);
 void resetBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 void printStats(struct Points &);
 
@@ -44,8 +44,8 @@ int main()
 
 	// main board data to be shared
 	array<array<char, BOARD_SIZE>, BOARD_SIZE> board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
-	struct Points points = {p1 : 0, p2 : 0};
-	struct Data data = {points : points, board : board, quit : false, pause : false};
+	struct Points points = {0, 0};
+	struct Data data = {points,board, false, false};
 
 	char playTag = 'X';
 	int location;
@@ -66,7 +66,7 @@ int main()
 	{
 		read(fd_rd, &data, sizeof(data));
 		cout << "received board data from player 1: " << endl;
-		printBoard(data.board);
+		showBoard(data.board);
 
 		// check if there is a winning move from previous play
 		if (isWinningMove(data.board))
@@ -74,7 +74,7 @@ int main()
 			cout << "Winner: Player 1" << endl;
 		}
 
-		if (isBoardFull(data.board))
+		if (noPlaySpaceInBoard(data.board))
 		{
 			cout << "The game has ended in a tie." << endl;
 			data.quit = true;
@@ -110,14 +110,14 @@ int main()
 				{
 					data.points.p2++; // if wining move, add points of player 2
 					data.quit = true; // change quit to true
-					printBoard(data.board);
+					showBoard(data.board);
 					cout << "Winner: Player 2" << endl;
 					printStats(data.points);
 					write(fd_wr, &data, sizeof(data));
 					break;
 				}
 
-				if (isBoardFull(data.board))
+				if (noPlaySpaceInBoard(data.board))
 				{
 					cout << "The game has ended in a tie." << endl;
 					data.quit = true;
@@ -126,7 +126,7 @@ int main()
 					break;
 				}
 
-				printBoard(data.board);
+				showBoard(data.board);
 				write(fd_wr, &data, sizeof(data));
 			}
 			else
@@ -146,7 +146,7 @@ bool isValidPlayLocation(int location)
 	return (location < 0 || location > 8) ? false : true;
 }
 
-void printBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
+void showBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 {
 	cout << "+-+-+-+" << endl;
 	for (auto const &row : board)
@@ -212,7 +212,7 @@ bool isWinningMove(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 	return false;
 }
 
-bool isBoardFull(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
+bool noPlaySpaceInBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &board)
 {
 	for (auto const &row : board)
 	{

@@ -46,8 +46,8 @@ int main()
 
 	// main board data to be shared
 	array<array<char, BOARD_SIZE>, BOARD_SIZE> board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
-	struct Points points = {p1 : 0, p2 : 0};
-	struct Data data = {points : points, board : board, quit : false, pause : false};
+	struct Points points = {0, 0};
+	struct Data data = {points, board, false, false};
 
 	char playTag = 'O';
 	int location;
