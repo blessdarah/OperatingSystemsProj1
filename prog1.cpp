@@ -23,13 +23,6 @@ void resetGameBoard(array<array<char, BOARD_SIZE>, BOARD_SIZE> &);
 void show_game_stats(struct Payload &);
 
 char playerTag = 'X';
-
-struct Points
-{
-	int p1 = 0;
-	int p2 = 0;
-};
-
 struct Payload
 {
 	int p1_score;
@@ -41,13 +34,12 @@ struct Payload
 int main()
 {
 	// create the named pipe (FIFO) if not exist
-	int f1 = mkfifo(player1to2, 0666);
-	int f2 = mkfifo(player2to1, 0666);
-	printf("@p1: f1 = %d  f2 = %d\n", f1, f2);
+	int pipe1 = mkfifo(player1to2, 0666);
+	int pipe2 = mkfifo(player2to1, 0666);
+	printf("@p1: pipe1 = %d  pipe2 = %d\n", pipe1, pipe2);
 
 	// main board payload to be shared
 	array<array<char, BOARD_SIZE>, BOARD_SIZE> board = {{'.', '1', '2', '3', '4', '5', '6', '7', '8'}};
-	struct Points points = {0, 0};
 	struct Payload payload = {0, 0, board, false};
 
 	char playTag = 'O';
